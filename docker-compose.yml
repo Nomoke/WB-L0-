@@ -1,0 +1,15 @@
+networks:
+  internal-network:
+    driver: bridge
+
+services:
+  nats:
+    container_name: nats_container
+    image: nats
+    command:
+      - "-js"
+    ports:
+      - "4222:4222"
+    networks:
+      - internal-network
+    restart: unless-stopped

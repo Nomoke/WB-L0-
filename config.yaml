@@ -1,0 +1,4 @@
+env: "dev" # dev, local, prod
+nats_url: "nats://localhost:4222"
+postgres_url: "postgresql://WBAdmin:159159@localhost:5432/OrderServiceDB?sslmode=disable"
+http_server: "localhost:8080"
