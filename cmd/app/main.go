@@ -45,11 +45,11 @@ func main() {
 		log.Error("failed to connect to database", slog.Any("error", err))
 		os.Exit(1)
 	}
-	db := storage.New(conn)
+	db := storage.New(conn, log)
 	defer db.Close()
 
 	// Инициализация кэша
-	orderCache := cache.NewOrder()
+	orderCache := cache.NewOrder(log)
 
 	// Инициализация сервиса заказов
 	orderService := service.New(db, orderCache)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Nomoke/wb-test-app/internal/logger"
 	"github.com/Nomoke/wb-test-app/internal/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -23,10 +24,11 @@ type OrderDBRepository interface {
 
 type DataBase struct {
 	*gorm.DB
+	log *logger.Logger
 }
 
-func New(conn *gorm.DB) *DataBase {
-	return &DataBase{conn}
+func New(conn *gorm.DB, log *logger.Logger) *DataBase {
+	return &DataBase{conn, log}
 }
 
 func (db *DataBase) Close() {
@@ -35,7 +37,7 @@ func (db *DataBase) Close() {
 }
 
 func (db *DataBase) SaveOrder(ctx context.Context, order models.Order) (*models.Order, error) {
-	fmt.Println("saving [order]...")
+	db.log.Info("saving [order]...")
 	op := "storage.postgress.SaveOrder"
 
 	deliveryID, err := db.SaveDelivery(ctx, order.Delivery)
@@ -66,12 +68,12 @@ func (db *DataBase) SaveOrder(ctx context.Context, order models.Order) (*models.
 	order.Payment.ID = paymentID
 	order.Delivery.ID = deliveryID
 
-	fmt.Println("[order] saved successfully")
+	db.log.Info("[order] saved successfully")
 	return &order, nil
 }
 
 func (db *DataBase) GetOrderById(ctx context.Context, id uuid.UUID) (*models.Order, error) {
-	fmt.Println("getting [order] from postgres")
+	db.log.Info("getting [order] from postgres")
 	op := "storage.postgress.GetOrderById"
 
 	order := &models.Order{}
@@ -108,7 +110,7 @@ func (db *DataBase) GetOrderById(ctx context.Context, id uuid.UUID) (*models.Ord
 }
 
 func (db *DataBase) SaveDelivery(ctx context.Context, delivery models.Delivery) (int, error) {
-	fmt.Println("saving [delivery]...")
+	db.log.Info("saving [delivery]...")
 	op := "storage.postgress.SaveDelivery"
 
 	sql := `INSERT INTO delivery (name, phone, zip, city, address, region, email) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id`
@@ -127,7 +129,7 @@ func (db *DataBase) SaveDelivery(ctx context.Context, delivery models.Delivery) 
 }
 
 func (db *DataBase) GetDeliveryById(ctx context.Context, deliveryId int) (*models.Delivery, error) {
-	fmt.Println("getting [delivery] from postgres")
+	db.log.Info("getting [delivery] from postgres")
 	op := "storage.postgress.GetDeliveryById"
 
 	delivery := models.Delivery{}
@@ -143,7 +145,7 @@ func (db *DataBase) GetDeliveryById(ctx context.Context, deliveryId int) (*model
 }
 
 func (db *DataBase) SavePayment(ctx context.Context, payment models.Payment) (int, error) {
-	fmt.Println("saving [payment]...")
+	db.log.Info("saving [payment]...")
 	op := "storage.postgress.SavePayment"
 
 	sql := `INSERT INTO payments (transaction, request_id, currency, provider, amount, payment_dt, bank, delivery_cost, goods_total, custom_fee) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`
@@ -155,14 +157,14 @@ func (db *DataBase) SavePayment(ctx context.Context, payment models.Payment) (in
 		return 0, fmt.Errorf("%s: %w", op, result.Error)
 	}
 
-	fmt.Println("[payment] saved successfully")
+	db.log.Info("[payment] saved successfully")
 
 	return paymentId, nil
 
 }
 
 func (db *DataBase) GetPaymentById(ctx context.Context, paymentId int) (*models.Payment, error) {
-	fmt.Println("getting [payment] from postgres")
+	db.log.Info("getting [payment] from postgres")
 	op := "storage.postgress.GetPaymentById"
 
 	payment := models.Payment{}
@@ -178,7 +180,7 @@ func (db *DataBase) GetPaymentById(ctx context.Context, paymentId int) (*models.
 }
 
 func (db *DataBase) SaveItems(ctx context.Context, items []models.OrderItem) error {
-	fmt.Println("saving [order items]...")
+	db.log.Info("saving [order items]...")
 	op := "storage.postgress.SaveItems"
 
 	sql := `INSERT INTO order_items (chrt_id, track_number, price, rid, name, sale, size, total_price, nm_id, brand, status) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
@@ -190,12 +192,12 @@ func (db *DataBase) SaveItems(ctx context.Context, items []models.OrderItem) err
 		}
 	}
 
-	fmt.Println("[order items] saved successfully")
+	db.log.Info("[order items] saved successfully")
 	return nil
 }
 
 func (db *DataBase) GetItemByTrackNumber(ctx context.Context, trackNumber string) ([]models.OrderItem, error) {
-	fmt.Println("getting [order items] from postgres")
+	db.log.Info("getting [order items] from postgres")
 	op := "storage.postgress.GetItemByTrackNumber"
 
 	items := []models.OrderItem{}
@@ -222,7 +224,7 @@ func (db *DataBase) GetItemByTrackNumber(ctx context.Context, trackNumber string
 
 // используется для восстановления в случае падения сервиса
 func (db *DataBase) GetAll(ctx context.Context) ([]models.Order, error) {
-	fmt.Println("getting all [order] from postgres")
+	db.log.Info("getting all [order] from postgres")
 	op := "storage.postgress.GetAll"
 
 	orders, err := db.getAllOrders(ctx)

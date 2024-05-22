@@ -3,8 +3,8 @@ package subscriber
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
+	"github.com/Nomoke/wb-test-app/internal/logger"
 	"github.com/Nomoke/wb-test-app/internal/models"
 	"github.com/Nomoke/wb-test-app/internal/nats"
 	"github.com/google/uuid"
@@ -21,6 +21,7 @@ type orderService interface {
 type Subscriber struct {
 	nc      *nats.NatsConnection
 	service orderService
+	log     logger.Logger
 }
 
 func New(nc *nats.NatsConnection, service orderService) error {
@@ -45,7 +46,6 @@ func New(nc *nats.NatsConnection, service orderService) error {
 		return err
 	}
 
-	// gorutine?
 	_, err = consumer.Consume(func(msg jetstream.Msg) {
 		ctx, cancel := context.WithCancel(context.TODO())
 		defer cancel()
@@ -54,14 +54,12 @@ func New(nc *nats.NatsConnection, service orderService) error {
 
 		err := json.Unmarshal(msg.Data(), &order)
 		if err != nil {
-			fmt.Println("unable to unmarshal msg: ", err)
+			subscriber.log.Info("unable to unmarshal msg: ", err)
 		}
-
-		fmt.Println(order.OrderUID)
 
 		err = service.SaveOrder(ctx, order)
 		if err != nil {
-			fmt.Println("unable to save order: ", err)
+			subscriber.log.Info("unable to save order: ", err)
 		}
 
 		msg.Ack()
@@ -73,10 +71,3 @@ func New(nc *nats.NatsConnection, service orderService) error {
 
 	return nil
 }
-
-// // prosess messages
-// func prosessMessages(m *jetstream.Msg) {
-// 	fmt.Println("prosessing messages...")
-
-// 	fmt.Println(string(m.).)
-// }

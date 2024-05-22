@@ -20,8 +20,6 @@ func New(service service.Order) *Order {
 }
 
 func (h *Order) GetOrderByID(w http.ResponseWriter, r *http.Request, log *slog.Logger) {
-	mess := r.Body
-	fmt.Print(mess)
 	id, err := orderIdValidator(chi.URLParam(r, "id"))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("uuid is invalid: %s", err), http.StatusBadRequest)

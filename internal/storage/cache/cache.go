@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/Nomoke/wb-test-app/internal/logger"
 	"github.com/Nomoke/wb-test-app/internal/models"
 	"github.com/google/uuid"
 )
@@ -17,25 +18,28 @@ type OrderCacheRepository interface {
 
 type OrderCache struct {
 	sync.Map
+	log *logger.Logger
 }
 
-func NewOrder() *OrderCache {
+func NewOrder(log *logger.Logger) *OrderCache {
 	return &OrderCache{}
 }
 
 func (cache *OrderCache) Get(id uuid.UUID) (any, error) {
-	fmt.Println("getting [order] from cache id = ", id)
+	cache.log.Info("getting [order] from cache id = ", id)
+
 	value, ok := cache.Load(id)
 	if !ok {
 		fmt.Println("not found [order] in cache")
 		return nil, errors.New("not found")
 	}
-	fmt.Println("returned [order] from cache")
+
+	cache.log.Info("returned [order] from cache")
 	return value, nil
 }
 
 func (cache *OrderCache) Set(order models.Order) {
-	fmt.Println("cache save [order] key = ", order.OrderUID)
+	cache.log.Info("cache save [order] key = ", order.OrderUID)
 	cache.Store(order.OrderUID, order)
 }
 
@@ -50,5 +54,5 @@ func (cache *OrderCache) SetAll(orders []models.Order) {
 		}(ord)
 	}
 
-	fmt.Printf("totally recovered %d orders\n", len)
+	cache.log.Info("totally recovered %d orders\n", len)
 }
