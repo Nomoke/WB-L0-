@@ -40,7 +40,7 @@ func (h *Order) GetOrderByID(w http.ResponseWriter, r *http.Request, log *slog.L
 		log.Error(fmt.Sprintf("error while making json: %s", err), err)
 		return
 	}
-
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 
 	_, err = w.Write(orderJson)

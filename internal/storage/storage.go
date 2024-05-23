@@ -53,8 +53,22 @@ func (db *DataBase) SaveOrder(ctx context.Context, order models.Order) (*models.
 	sql := `INSERT INTO orders (order_uid, delivery_id, payment_id, locale, internal_signature, customer_id, delivery_service, shard_key, sm_id, date_created, oof_shard, track_number, entry)
 	VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`
 
-	result := db.WithContext(ctx).Exec(sql, order.OrderUID, deliveryID, paymentID, order.Locale, order.InternalSig, order.CustomerID, order.DeliveryService,
-		order.ShardKey, order.SMID, order.DateCreated, order.OofShard, order.TrackNumber, order.Entry)
+	result := db.WithContext(ctx).Exec(
+		sql, 
+		order.OrderUID, 
+		deliveryID, 
+		paymentID, 
+		order.Locale, 
+		order.InternalSig, 
+		order.CustomerID, 
+		order.DeliveryService,
+		order.ShardKey, 
+		order.SMID, 
+		order.DateCreated, 
+		order.OofShard, 
+		order.TrackNumber, 
+		order.Entry,
+	)
 
 	if result.Error != nil {
 		return &order, fmt.Errorf("%s: %w", op, result.Error)
@@ -116,7 +130,16 @@ func (db *DataBase) SaveDelivery(ctx context.Context, delivery models.Delivery) 
 	sql := `INSERT INTO delivery (name, phone, zip, city, address, region, email) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id`
 
 	var deliveryId int
-	result := db.WithContext(ctx).Raw(sql, delivery.Name, delivery.Phone, delivery.Zip, delivery.City, delivery.Address, delivery.Region, delivery.Email).Scan(&deliveryId)
+	result := db.WithContext(ctx).Raw(
+		sql, 
+		delivery.Name, 
+		delivery.Phone, 
+		delivery.Zip, 
+		delivery.City, 
+		delivery.Address, 
+		delivery.Region, 
+		delivery.Email,
+	).Scan(&deliveryId)
 
 	if result.Error != nil {
 		return 0, fmt.Errorf("%s: %w", op, result.Error)
@@ -151,7 +174,19 @@ func (db *DataBase) SavePayment(ctx context.Context, payment models.Payment) (in
 	sql := `INSERT INTO payments (transaction, request_id, currency, provider, amount, payment_dt, bank, delivery_cost, goods_total, custom_fee) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`
 
 	var paymentId int
-	result := db.WithContext(ctx).Raw(sql, payment.Transaction, payment.RequestID, payment.Currency, payment.Provider, payment.Amount, payment.PaymentDT, payment.Bank, payment.DeliveryCost, payment.GoodsTotal, payment.CustomFee).Scan(&paymentId)
+	result := db.WithContext(ctx).Raw(
+		sql, 
+		payment.Transaction, 
+		payment.RequestID, 
+		payment.Currency, 
+		payment.Provider, 
+		payment.Amount, 
+		payment.PaymentDT, 
+		payment.Bank, 
+		payment.DeliveryCost, 
+		payment.GoodsTotal, 
+		payment.CustomFee,
+	).Scan(&paymentId)
 
 	if result.Error != nil {
 		return 0, fmt.Errorf("%s: %w", op, result.Error)
@@ -186,7 +221,20 @@ func (db *DataBase) SaveItems(ctx context.Context, items []models.OrderItem) err
 	sql := `INSERT INTO order_items (chrt_id, track_number, price, rid, name, sale, size, total_price, nm_id, brand, status) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
 
 	for _, i := range items {
-		result := db.WithContext(ctx).Exec(sql, i.ChrtId, i.TrackNumber, i.Price, i.RID, i.Name, i.Sale, i.Size, i.TotalPrice, i.NMID, i.Brand, i.Status)
+		result := db.WithContext(ctx).Exec(
+			sql, 
+			i.ChrtId, 
+			i.TrackNumber, 
+			i.Price, 
+			i.RID, 
+			i.Name, 
+			i.Sale, 
+			i.Size, 
+			i.TotalPrice, 
+			i.NMID, 
+			i.Brand, 
+			i.Status,
+		)
 		if result.Error != nil {
 			return fmt.Errorf("%s: %w", op, result.Error)
 		}
@@ -211,7 +259,19 @@ func (db *DataBase) GetItemByTrackNumber(ctx context.Context, trackNumber string
 
 	for result.Next() {
 		item := models.OrderItem{}
-		err := result.Scan(&item.ChrtId, &item.TrackNumber, &item.Price, &item.RID, &item.Name, &item.Sale, &item.Size, &item.TotalPrice, &item.NMID, &item.Brand, &item.Status)
+		err := result.Scan(
+			&item.ChrtId, 
+			&item.TrackNumber, 
+			&item.Price, 
+			&item.RID, 
+			&item.Name, 
+			&item.Sale, 
+			&item.Size, 
+			&item.TotalPrice, 
+			&item.NMID, 
+			&item.Brand, 
+			&item.Status,
+		)
 		if err != nil {
 			return items, fmt.Errorf("%s: %w", op, err)
 		}
@@ -269,10 +329,22 @@ func (db *DataBase) getAllOrders(ctx context.Context) ([]models.Order, error) {
 	}
 
 	for rows.Next() {
-		order := models.Order{}
-		err := rows.Scan(&order.OrderUID, &order.TrackNumber, &order.Entry, &order.Delivery.ID, &order.Payment.ID,
-			&order.Locale, &order.CustomerID, &order.DeliveryService, &order.ShardKey,
-			&order.SMID, &order.DateCreated, &order.OofShard)
+		var order models.Order
+		err := rows.Scan(
+			&order.OrderUID,
+			&order.DeliveryID,
+			&order.PaymentID,
+			&order.Locale,
+			&order.InternalSig,
+			&order.CustomerID,
+			&order.DeliveryService,
+			&order.ShardKey,
+			&order.SMID,
+			&order.DateCreated,
+			&order.OofShard,
+			&order.TrackNumber,
+			&order.Entry,
+		)
 		if err != nil {
 			return orders, fmt.Errorf("%s: %w", op, err)
 		}

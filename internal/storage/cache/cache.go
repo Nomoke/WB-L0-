@@ -22,11 +22,11 @@ type OrderCache struct {
 }
 
 func NewOrder(log *logger.Logger) *OrderCache {
-	return &OrderCache{}
+	return &OrderCache{log: log}
 }
 
 func (cache *OrderCache) Get(id uuid.UUID) (any, error) {
-	cache.log.Info("getting [order] from cache id = ", id)
+	cache.log.Info(fmt.Sprintf("getting [order] from cache id = %s", id.String()))
 
 	value, ok := cache.Load(id)
 	if !ok {
@@ -39,7 +39,7 @@ func (cache *OrderCache) Get(id uuid.UUID) (any, error) {
 }
 
 func (cache *OrderCache) Set(order models.Order) {
-	cache.log.Info("cache save [order] key = ", order.OrderUID)
+	cache.log.Info(fmt.Sprintf("cache set [order] key = %s", order.OrderUID))
 	cache.Store(order.OrderUID, order)
 }
 
@@ -50,9 +50,11 @@ func (cache *OrderCache) SetAll(orders []models.Order) {
 
 	for _, ord := range orders {
 		go func(o models.Order) {
+			defer wg.Done()
 			cache.Set(o)
 		}(ord)
 	}
 
-	cache.log.Info("totally recovered %d orders\n", len)
+	wg.Wait()
+	cache.log.Info(fmt.Sprintf("totally recovered %d orders", len))
 }
